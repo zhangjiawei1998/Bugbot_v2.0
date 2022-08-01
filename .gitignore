@@ -1,0 +1,9 @@
+__pycache__/
+js/
+users_data/
+python38/
+EXECUTE.bat
+bug.log
+test.py
+test_multiprocess.py
+cart_info.json
