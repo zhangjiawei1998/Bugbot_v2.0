@@ -75,7 +75,6 @@ class NotPusher(object):
             sha.update("".join(sortlist).encode('utf-8'))
             return  sha.hexdigest()
         except Exception as e:
-            print(e)
             return  None
         
     def send_text(self, fromUser:str, toUser:str, text:str):
@@ -105,10 +104,9 @@ class NotPusher(object):
         }
         
         resp = requests.post(url=url, headers=self.headers, json=data)
-        print(resp,resp.text)
 
 pusher = NotPusher()
 
 # 推送消息测试 
-# x = pusher.send_text('Bugbot','ZhangJiaWei','用户zhangjiawei')
+# x = pusher.send_text('Bugbot','zhangjin','用户zhangjiawei')
 

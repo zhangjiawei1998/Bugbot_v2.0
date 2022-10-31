@@ -2,6 +2,7 @@
 from pathlib import Path
 import configparser
 import pickle
+from turtle import st
 
 CONFIG_PATH = Path('./users_data/config.ini')
 
@@ -19,7 +20,7 @@ class Config(object):
         else:
             self.config.read(self.config_path, encoding='utf-8')
 
-    def get(self, section, option):
+    def get(self, section, option) -> str:
         if self.config.has_section(section): # 老用户
             s = self.config.get(section, option)
             s = s.strip() # 剥离空白字符
@@ -31,7 +32,7 @@ class Config(object):
     def getboolean(self, section, name):
         return self.config.getboolean(section, name)
 
-    def add_user(self, section, nick_name:str='', cookie_path:str='', area_id:str='', eid:str='', fp:str=''):
+    def add_user(self, section, nick_name:str='', cookie_path:str='', area_id:str='', eid:str='', fp:str='', qywx_count:str='ZhangjiaWei'):
         if self.config.has_section(section):
             return False # 添加用户失败
         self.config.add_section(section)
@@ -40,6 +41,7 @@ class Config(object):
         self.config.set(section, 'area_id', area_id)
         self.config.set(section, 'eid', eid)
         self.config.set(section, 'fp', fp)
+        self.config.set(section, 'qywx_count', qywx_count)
         self.config.write(open(self.config_path,'w',encoding='utf-8'))
         return True
 

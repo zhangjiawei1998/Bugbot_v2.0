@@ -130,9 +130,8 @@ class User(QThread):
         self.area_id     = '15_1213_3038_59931' if is_new_user else global_config.get(username, 'area_id')    # 默认地区西湖区，该参数只为查询库存
         self.eid         = ''                   if is_new_user else global_config.get(username, 'eid')        # 似乎不需要
         self.fp          = ''                   if is_new_user else global_config.get(username, 'fp')         # 似乎不需要
-        # self.send_message = global_config.getboolean('messenger', 'enable')
-        # self.messenger    = Messenger(global_config.get('messenger', 'sckey')) if self.send_message else None
-        
+        self.qywx_count  = 'ZhangjiaWei'        if is_new_user else global_config.get(username, 'qywx_count') # 新用户默认推送消息到ZhangjiaWei
+
         # 会话信息
         self.user_agent = random_USER_AGENTS
         self.sess = requests.session()
@@ -347,12 +346,12 @@ class User(QThread):
             
         # 已登录新用户 获取信息并添加到config.ini里
         if self.is_new_user and self.is_login:
-            global_config.add_user(self.username, self.nick_name, self.cookie_path, self.area_id, self.eid, self.fp)
+            global_config.add_user(self.username, self.nick_name, self.cookie_path, self.area_id, self.eid, self.fp, self.qywx_count)
 
     def run(self):
         self.login()
 
-# 主界面 ui
+# 单个用户界面 ui
 class Bugbot(QWidget, Ui_USER):
     loggerSignal = pyqtSignal(str)
     statusSignal = pyqtSignal(str, int)
@@ -450,8 +449,7 @@ class Bugbot(QWidget, Ui_USER):
         # 通过迭代器获取当前选中的行数的索引
         for i in self.tableWidget.selectionModel().selection().indexes():
             rowNum = i.row()
-            
-        print(len(self.seckill_group), rowNum)
+
         if len(self.seckill_group) <= rowNum:
             return
 
@@ -600,7 +598,8 @@ class Bugbot(QWidget, Ui_USER):
                                          user_agent=self.user.user_agent,
                                          area_id=self.user.area_id,
                                          eid = self.user.eid,
-                                         fp = self.user.fp)
+                                         fp = self.user.fp,
+                                         qywx_count = self.user.qywx_count)
         
         # 初始化log读取线程: 从共享堆内存self.Bugbot_logic.loginfo中读取
         self.read_log = read_loginfo(self.Bugbot_logic.loginfo)
@@ -631,7 +630,7 @@ class Bugbot(QWidget, Ui_USER):
             self.monitor_process = psutil.Process(monitor_process.pid)
         # 预约抢购模式
         else:
-            seckill_process = Process(target=self.seckill_reserve)
+            seckill_process = Process(target=self.Bugbot_logic.seckill_reserve)
             seckill_process.start()
             
             self.seckill_process = psutil.Process(seckill_process.pid)
@@ -673,13 +672,14 @@ class Bugbot(QWidget, Ui_USER):
 
 # 逻辑
 class Bugbot_logic(object):
-    def __init__(self, session, username:str, user_agent:str, area_id:str, eid:str, fp:str) -> None:
+    def __init__(self, session, username:str, user_agent:str, area_id:str, eid:str, fp:str, qywx_count:str) -> None:
         self.sess = session
         self.user_agent = user_agent
         self.area_id = area_id
         self.eid = eid
         self.fp = fp
-    
+
+        self.qywx_count = qywx_count
         self.username = username
         self.buy_time = ''
         
@@ -727,7 +727,7 @@ class Bugbot_logic(object):
                     self.get_order_info(group_id)# 获取订单信息
                     self.submit_order(group_id) # 提交订单
                 self.lock.release()
-            time.sleep(2)
+            time.sleep(1)
             
     def cancel_select_all_cart_item(self):
         """
@@ -997,7 +997,7 @@ class Bugbot_logic(object):
                 for itemInfo in self.seckill_group[group_id].values():
                     items += f'{itemInfo[1]}x{itemInfo[0]} ' 
                 msg = f'用户[{self.username}]商品下单成功\n商品名称[ {items}]\n订单号[{order_id}]]'
-                pusher.send_text('Bugbot_v2.0', 'ZhangJiaWei', msg)
+                pusher.send_text('Bugbot_v2.0', self.qywx_count, msg)
             else:
                 message, result_code = resp_json.get('message'), resp_json.get('resultCode')
                 if result_code == 0:
@@ -1022,7 +1022,7 @@ class Bugbot_logic(object):
                     self.lock.acquire() # 嗦住！ 防止内存混乱
                     self.add_item_to_cart(item_have_stock)
                     self.lock.release()
-            time.sleep(2)
+            time.sleep(1)
             
     def get_multi_item_stock(self, items: list):
         """
@@ -1157,10 +1157,10 @@ class Bugbot_logic(object):
                     resp_json = self.user.sess.post(url=url2, headers=headers2,data=data2).json()
                     if resp_json.get('success'):
                         order_id = resp_json.get('orderId')
-                        self.loggerSignal.emit(f'商品订单提交成功, 订单号: {order_id}')
+                        self.log(f'商品订单提交成功, 订单号: {order_id}')
                     else:
                         message, result_code = resp_json.get('message'), resp_json.get('resultCode')
-                        self.loggerSignal.emit(f'商品订单提交失败, resultCode: {result_code}, message: {message}') 
+                        self.log(f'商品订单提交失败, resultCode: {result_code}, message: {message}') 
             
             time.sleep(0.01)
 
@@ -1168,7 +1168,7 @@ class Bugbot_logic(object):
         try:
             reserve_url = self.get_reserve_url(item_id)
             if not reserve_url:
-                self.loggerSignal.emit(f'{item_id}非预约商品')
+                self.log(f'{item_id}非预约商品')
                 return
             headers = {
                 'User-Agent': self.user.user_agent,
@@ -1178,11 +1178,11 @@ class Bugbot_logic(object):
             soup = BeautifulSoup(resp.text, "html5lib")
             reserve_result = soup.find('p', {'class': 'bd-right-result'}).text.strip(' \t\r\n')
         except Exception as e:
-            self.loggerSignal.emit(f'商品({item_id})预约失败, error:{e}')
+            self.log(f'商品({item_id})预约失败, error:{e}')
             return False
         else:
             # 预约成功，已获得抢购资格 / 您已成功预约过了，无需重复预约
-            self.loggerSignal.emit(f'商品({item_id}){reserve_result}')
+            self.log(f'商品({item_id}){reserve_result}')
             return True
     
     def get_reserve_url(self, item_id: str):
@@ -1212,7 +1212,7 @@ class Bugbot_logic(object):
             'Referer':      'https://cart.jd.com/'
             
         }
-        self.loggerSignal.emit('将定时抢购商品: ')
+        self.log('将定时抢购商品: ')
         # 从self.seckill_group获得需要勾选的商品信息, 放到body里
         TheSkus = []
         for seckill_info in self.seckill_group:
@@ -1224,7 +1224,7 @@ class Bugbot_logic(object):
                         skuUuid=self.cart_info[item_id]['skuUuid'],
                         useUuid=self.cart_info[item_id]['useUuid']
                     )
-                    self.loggerSignal.emit(item_id + ' '+ item_info[1] + ' x' + str(item_info[0]))
+                    self.log(item_id + ' '+ item_info[1] + ' x' + str(item_info[0]))
                     TheSkus.append(TheSku)
 
         body = dict(
@@ -1340,7 +1340,7 @@ class Bugbot_logic(object):
                         'promo_id':     item['targetId']               # int ?
                     }
                 except Exception as e:
-                    self.loggerSignal.emit(f"购物车信息解析错误, 报错信息：{e}, 忽略商品:{item['Num']}")
+                    self.log(f"购物车信息解析错误, 报错信息：{e}, 忽略商品:{item['Num']}")
         return cart_info
     
     def cart_Check_Single(self, item_id: str, cart_info: dict):
@@ -1388,14 +1388,15 @@ class Bugbot_logic(object):
             resp_json = self.user.sess.post(url=url_with_params, headers=headers).json()
             # 是否更改成功：比较total_num和购物车已勾选的商品数量 [maybe]
             if resp_json['resultData']['cartInfo']['checkedWareNum'] >= 1:
-                self.loggerSignal.emit(f'勾选成功')
+                self.log(f'勾选成功')
                 return True
             else:
-                self.loggerSignal.emit(f'勾选失败')
+                self.log(f'勾选失败')
                 return False
         except Exception as e:
             return False
 
+# 多用户登录界面
 class MainWindow(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1450,7 +1451,7 @@ class read_loginfo(QThread):
     loggerSignal = pyqtSignal(str)
     def __init__(self, loginfo, timesleep:int=1, timeout:int=5) -> None:
         super().__init__()
-        """传入loginfo列表的引用, 读取存在堆内存中的日志信息
+        """传入loginfo列表的引用, 读取存在堆(heap)内存中的日志信息
             如果日志信息>5条  ->  输出日志信息到ui
             如果timeout超时  ->  输出日志信息到ui
             
