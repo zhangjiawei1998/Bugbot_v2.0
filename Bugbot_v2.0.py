@@ -368,17 +368,17 @@ class Bugbot(QWidget, Ui_USER):
         
         # 优先抢购记录
         self.priority_record = 0
-        
+        # 抢购进程
         self.seckill_process = ''
         self.monitor_process = ''
         # 创建一个Bugbot_logic, 用于多进程抢购
         self.Bugbot_logic = ''
         self.read_log = ''
-        # 初始化抢购信息
-        self.seckill_group = ''
-        self.if_seckill    = ''
-        # 日志信息
-        self.loginfo       = ''
+        # 初始化抢购信息(位于堆内存中)
+        self.seckill_interval = '' # 抢购间隔, 默认1.2s
+        self.seckill_group    = '' # 抢购信息
+        self.if_seckill       = '' # 是否抢购
+        self.loginfo          = '' # 日志信息
 
         self.connect()
         
@@ -418,6 +418,7 @@ class Bugbot(QWidget, Ui_USER):
         self.Btn_exportSeckillInfo.clicked.connect(self.import_or_export_seckill_info)
         self.loggerSignal.connect(self._logger)
         self.statusSignal.connect(self._logger)
+        self.spinBox_interval.valueChanged.connect(self.change_seckill_interval)
         # add_items()信号
         self.ui_add_items.getItemSignal.connect(self.add_seckill_info)# getItemSignal信号 --> 添加一组秒杀信息
         # User() 信号
@@ -591,6 +592,10 @@ class Bugbot(QWidget, Ui_USER):
 
         return buy_time # <str> 2021-08-15 23:59:59.800
 
+    def change_seckill_interval(self):
+        del self.seckill_interval[0: len(self.seckill_interval)]
+        self.seckill_interval.append(self.spinBox_interval.value() / 1000)
+        
     def init_bugbot_logic(self):
         # 初始化bugbot_logic， 大概需要3秒
         self.Bugbot_logic = Bugbot_logic(session=self.user.sess,
@@ -606,9 +611,10 @@ class Bugbot(QWidget, Ui_USER):
         self.read_log.loggerSignal.connect(self._logger)
 
         # 共享内存
-        self.seckill_group  = self.Bugbot_logic.seckill_group
-        self.if_seckill     = self.Bugbot_logic.if_seckill
-        self.loginfo        = self.Bugbot_logic.loginfo
+        self.seckill_interval = self.Bugbot_logic.seckill_interval
+        self.seckill_group    = self.Bugbot_logic.seckill_group
+        self.if_seckill       = self.Bugbot_logic.if_seckill
+        self.loginfo          = self.Bugbot_logic.loginfo
         
     def process_start(self):
         """
@@ -685,6 +691,8 @@ class Bugbot_logic(object):
         
         self.lock = Lock() # 抢购进程和监控进程的lock
         m = Manager()
+        # 抢购间隔 默认 1.2s
+        self.seckill_interval = m.list([1.2])
         # 秒杀信息列表
         self.seckill_group = m.list()
         self.if_seckill    = m.list()
@@ -727,7 +735,7 @@ class Bugbot_logic(object):
                     self.get_order_info(group_id)# 获取订单信息
                     self.submit_order(group_id) # 提交订单
                 self.lock.release()
-            time.sleep(1)
+            time.sleep(self.seckill_interval[0] if len(self.seckill_interval) > 0 else 1.2)
             
     def cancel_select_all_cart_item(self):
         """
@@ -1022,7 +1030,7 @@ class Bugbot_logic(object):
                     self.lock.acquire() # 嗦住！ 防止内存混乱
                     self.add_item_to_cart(item_have_stock)
                     self.lock.release()
-            time.sleep(1)
+            time.sleep(self.seckill_interval[0] if len(self.seckill_interval) > 0 else 1.2)
             
     def get_multi_item_stock(self, items: list):
         """
@@ -1473,7 +1481,7 @@ class read_loginfo(QThread):
                 self.loopcount = 0
             else:
                 self.loopcount += 1
-            time.sleep(1)
+            time.sleep(1.0)
             
     def run(self):
         self.reading()
@@ -1502,10 +1510,7 @@ class read_log(QThread):
 
 if __name__ == '__main__':
     
-    # app = QApplication(sys.argv)
-    # w = Bugbot('胯下运球人', False) 
-    # w.show()
-    # sys.exit(app.exec_())
+
     
     app = QApplication(sys.argv)
     bugbot = MainWindow()

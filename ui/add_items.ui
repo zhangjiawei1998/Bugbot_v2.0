@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>432</width>
+    <width>434</width>
     <height>458</height>
    </rect>
   </property>
@@ -26,49 +26,6 @@
        </property>
        <property name="text">
         <string>获取商品</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="pushButton_get_coupon">
-       <property name="font">
-        <font>
-         <family>Agency FB</family>
-         <pointsize>10</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>一键领券</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="label_9">
-       <property name="font">
-        <font>
-         <family>Agency FB</family>
-         <pointsize>10</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>查询库存间隔</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QSpinBox" name="spinBox_interval">
-       <property name="maximum">
-        <number>2000</number>
-       </property>
-       <property name="value">
-        <number>1000</number>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="label_19">
-       <property name="text">
-        <string>毫秒</string>
        </property>
       </widget>
      </item>

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'e:\jd-assistant\ui\add_items.ui'
+# Form implementation generated from reading ui file 'd:\document\BugBot_v2.0\ui\add_items.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.4
 #
@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_add_items(object):
     def setupUi(self, add_items):
         add_items.setObjectName("add_items")
-        add_items.resize(432, 458)
+        add_items.resize(434, 458)
         self.gridLayout = QtWidgets.QGridLayout(add_items)
         self.gridLayout.setObjectName("gridLayout")
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
@@ -26,28 +26,6 @@ class Ui_add_items(object):
         self.pushButton_get_items.setFont(font)
         self.pushButton_get_items.setObjectName("pushButton_get_items")
         self.horizontalLayout_2.addWidget(self.pushButton_get_items)
-        self.pushButton_get_coupon = QtWidgets.QPushButton(add_items)
-        font = QtGui.QFont()
-        font.setFamily("Agency FB")
-        font.setPointSize(10)
-        self.pushButton_get_coupon.setFont(font)
-        self.pushButton_get_coupon.setObjectName("pushButton_get_coupon")
-        self.horizontalLayout_2.addWidget(self.pushButton_get_coupon)
-        self.label_9 = QtWidgets.QLabel(add_items)
-        font = QtGui.QFont()
-        font.setFamily("Agency FB")
-        font.setPointSize(10)
-        self.label_9.setFont(font)
-        self.label_9.setObjectName("label_9")
-        self.horizontalLayout_2.addWidget(self.label_9)
-        self.spinBox_interval = QtWidgets.QSpinBox(add_items)
-        self.spinBox_interval.setMaximum(2000)
-        self.spinBox_interval.setProperty("value", 1000)
-        self.spinBox_interval.setObjectName("spinBox_interval")
-        self.horizontalLayout_2.addWidget(self.spinBox_interval)
-        self.label_19 = QtWidgets.QLabel(add_items)
-        self.label_19.setObjectName("label_19")
-        self.horizontalLayout_2.addWidget(self.label_19)
         self.gridLayout.addLayout(self.horizontalLayout_2, 0, 0, 1, 1)
         self.textBrowser = QtWidgets.QTextBrowser(add_items)
         font = QtGui.QFont()
@@ -272,9 +250,6 @@ class Ui_add_items(object):
         _translate = QtCore.QCoreApplication.translate
         add_items.setWindowTitle(_translate("add_items", "Form"))
         self.pushButton_get_items.setText(_translate("add_items", "获取商品"))
-        self.pushButton_get_coupon.setText(_translate("add_items", "一键领券"))
-        self.label_9.setText(_translate("add_items", "查询库存间隔"))
-        self.label_19.setText(_translate("add_items", "毫秒"))
         self.label_5.setText(_translate("add_items", "购买数量"))
         self.t_1.setText(_translate("add_items", "商品编号"))
         self.label_2.setText(_translate("add_items", "商品编号"))
